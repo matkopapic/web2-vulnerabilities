@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="index.css">
+    <title>Web vulnerabilities</title>
+</head>
+<body>
+<h1>1. SQL Injection</h1>
+
+<section class="instructions">
+    <p>SQL Injection je ovdje demonstriran na primjeru forme za login koja u odgovoru vraća podatke o korisniku, email i korisničko ime.</p>
+    <p>Planirano korištenje se može provjeriti s nekim postojećim korisničkim imenom (npr. admin) i bilo kojom lozinkom (provjera lozinke nije potrebna za demonstraciju ove ranjivosti)</p>
+    <p>Kada je ranjivost uključena može se poslati username takav da se vrate svi redovi u tablici users npr.<br/> <strong>test' OR 1=1;--</strong> i bilo koja lozinka</p>
+</section>
+
+<form id="loginForm1" method="POST" action="/login">
+    <input name="username" placeholder="username" type="text"/>
+    <input name="password" placeholder="password" type="password"/>
+    <div class="form-row">
+        <input type="checkbox" id="allow-sql-injection" name="allow_sql_injection" checked/>
+        <label for="allow-sql-injection">Allow SQL Injection</label>
+    </div>
+    <button type="submit">Show user info</button>
+    <pre id="output1"></pre>
+</form>
+
+<br/>
+<br/>
+<br/>
+<br/>
+<h1>2. Broken auth</h1>
+
+<section class="instructions">
+    <p>Autentifikacija može biti loša iz više razloga, ovdje je implementirana kombinacija od nekoliko kritičnih pogrešaka koje uzrokuju ranjivosti.</p>
+    <span>Kada je odabran mod <strong>Insecure</strong> promijenjeno je sljedeće:</span>
+    <ul>
+        <li>Isključena validacija lozinki (lozinka može biti proizvoljne duljine)</li>
+        <li>Login error poruke daju informacije napadaču gdje je pogriješio npr. <strong>No account found for this email</strong></li>
+        <li>Lozinke se hashiraju algoritmom MD5 bez soli</li>
+        <li>Identifikator sesije se vraća u JSON odgovoru od login rute u običnom tekst obliku te se sprema u localStorage</li>
+    </ul>
+
+    <span>Kada je odabran mod <strong>Secure</strong> promijenjeno je sljedeće</span>
+    <ul>
+        <li>Uključena validacija lozinki (lozinka more biti dulja od 8 znakova)</li>
+        <li>Login error poruke ne daju informacije napadaču gdje je pogriješio npr. <strong>Invalid credentials</strong></li>
+        <li>Lozinke se hashiraju algoritmom SHA256 sa soli</li>
+        <li>Identifikator sesije se vraća u obliku HttpOnly kolačića, ne može se pročitati iz Javascripta</li>
+    </ul>
+
+    <p>Oba moda se mogu provjeriti tako da se prvo registrira račun, s istim se ulogira i onda se stisne <strong>Check /me</strong> gumb. Pri tim akcijama ispod gumba će se pojaviti odgovor od servera.</p>
+    <p><strong>Napomena: </strong> pri završetku korištenja korisnika trebalo bi stisnuti <strong>Logout</strong></p>
+    <p><strong>Napomena: </strong> zbog različitih algoritama hashiranja, računu napravljenom u jednom modu se može pristupiti samo iz tog istog moda</p>
+</section>
+
+<section>
+    <div class="form-row">
+        <input type="checkbox" name="secure-toggle" id="toggle"/>
+        <label for="toggle" id="mode-label">Current mode: Insecure</label>
+    </div>
+</section>
+
+
+<section id="register-section">
+    <h3>Register</h3>
+    <input id="email" placeholder="email"/>
+    <input id="username" placeholder="username"/>
+    <input id="password" placeholder="password" type="password"/>
+    <button id="register-btn">Register</button>
+    <div class="loader-container">
+        <span id="register-loader" class="loader hidden"></span>
+    </div>
+    <pre id="register-result"></pre>
+</section>
+
+
+<section id="login-section">
+    <h3>Login</h3>
+    <input id="login-email" placeholder="email"/>
+    <input id="login-password" placeholder="password" type="password"/>
+    <button id="login-btn">Login</button>
+    <div class="loader-container">
+        <span id="login-loader" class="loader hidden"></span>
+    </div>
+    <pre id="login-result"></pre>
+</section>
+
+
+<section id="me-section">
+    <h3>Who am I?</h3>
+    <button id="me-btn">Check /me</button>
+    <div class="loader-container">
+        <span id="me-loader" class="loader hidden"></span>
+    </div>
+    <pre id="me-result"></pre>
+    <button id="logout-btn">Logout</button>
+</section>
+
+<script src="sql-injection.js"></script>
+<script src="auth.js"></script>
+</body>
+</html>
